@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Notes</title>
+</head>
+<body>
+    <h1>My Notes</h1>
+
+    {% for note in notes %}
+        <h2>{{ note.title }}</h2>
+        <p>{{ note.content }}</p>
+        <hr>
+    {% endfor %}
+
+</body>
+</html>
