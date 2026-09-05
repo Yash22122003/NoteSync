@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from .models import Note
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 
 @login_required
 def note_list(request):
@@ -76,3 +77,35 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect("login")
+
+
+def signup_view(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if password != confirm_password:
+            return render(request, "notes/signup.html", {
+                "error": "Passwords do not match"
+            })
+
+        if User.objects.filter(username=username).exists():
+            return render(request, "notes/signup.html", {
+                "error": "Username already exists"
+            })
+
+        user = User.objects.create_user(
+            username=username,
+            password=password
+        )
+
+        login(
+    request,
+    user,
+    backend='django.contrib.auth.backends.ModelBackend'
+)
+
+        return redirect("note_list")
+
+    return render(request, "notes/signup.html")

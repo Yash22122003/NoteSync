@@ -1,20 +1,22 @@
 {% load socialaccount %}
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Login</title>
 </head>
+
 <body>
 
     <h1>Login</h1>
     <a href="{% provider_login_url 'google' %}">
         Continue with Google
     </a>
-    
+
     <hr>
 
     {% if error %}
-        <p>{{ error }}</p>
+    <p>{{ error }}</p>
     {% endif %}
 
     <form method="POST">
@@ -32,6 +34,10 @@
 
         <button type="submit">Login</button>
     </form>
-
+    <br>
+    <a href="{% url 'signup' %}">
+        Don't have an account? Sign Up
+    </a>
 </body>
+
 </html>
