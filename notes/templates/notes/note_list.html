@@ -6,6 +6,8 @@
 <body>
 
     <h1>My Notes</h1>
+    <a href="{% url 'logout' %}">Logout</a>
+    <br><br>
     <a href="{% url 'note_create' %}">Create New Note</a>
     <hr>
     {% for note in notes %}

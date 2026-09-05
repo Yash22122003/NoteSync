@@ -1,14 +1,16 @@
 from django.shortcuts import render, redirect
 from .models import Note
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def note_list(request):
     notes = Note.objects.filter(user=request.user)
 
     return render(request, "notes/note_list.html", {
         "notes": notes
     })
-
+@login_required
 def note_create(request):
     if request.method == "POST":
         title = request.POST.get("title")
@@ -22,6 +24,7 @@ def note_create(request):
         return redirect("note_list")
     return render(request, "notes/note_create.html")
 
+@login_required
 def note_edit(request, id):
     note = Note.objects.get(id=id, user=request.user)
 
@@ -38,10 +41,15 @@ def note_edit(request, id):
     })
 
 
+@login_required
 def note_delete(request, id):
     note = Note.objects.get(id=id, user=request.user)
-    note.delete()
-    return redirect("note_list")
+    if request.method == "POST":
+        note.delete()
+        return redirect("note_list")
+    return render(request, "notes/note_delete.html", {
+        "note": note
+    })
 
 def login_view(request):
     if request.method == "POST":
