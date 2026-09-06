@@ -3,6 +3,10 @@ from .models import Note
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from .forms import NoteForm
+from django.contrib import messages
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 @login_required
 def note_list(request):
@@ -14,30 +18,37 @@ def note_list(request):
 @login_required
 def note_create(request):
     if request.method == "POST":
-        title = request.POST.get("title")
-        content = request.POST.get("content")
+        form = NoteForm(request.POST)
 
-        Note.objects.create(
-            user=request.user,
-            title=title,
-            content=content
-            )
-        return redirect("note_list")
-    return render(request, "notes/note_create.html")
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.user = request.user
+            note.save()
 
+            messages.success(request, "Note created successfully.")
+            return redirect("note_list")
+    else:
+        form = NoteForm()
+    return render(request, "notes/note_create.html", {
+        "form": form
+    })
 @login_required
 def note_edit(request, id):
     note = Note.objects.get(id=id, user=request.user)
 
     if request.method == "POST":
-        note.title = request.POST["title"]
-        note.content = request.POST["content"]
+        form = NoteForm(request.POST, instance=note)
 
-        note.save()
+        if form.is_valid():
+            form.save()
 
-        return redirect("note_list")
+            messages.success(request, "Note updated successfully.")
+            return redirect("note_list")
 
+    else:
+        form = NoteForm(instance=note)
     return render(request, "notes/note_edit.html", {
+        "form": form,
         "note": note
     })
 
@@ -47,6 +58,7 @@ def note_delete(request, id):
     note = Note.objects.get(id=id, user=request.user)
     if request.method == "POST":
         note.delete()
+        messages.success(request, "Note deleted successfully.")
         return redirect("note_list")
     return render(request, "notes/note_delete.html", {
         "note": note
@@ -89,7 +101,12 @@ def signup_view(request):
             return render(request, "notes/signup.html", {
                 "error": "Passwords do not match"
             })
-
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            return render(request, "notes/signup.html", {
+                "error": e.messages[0]
+    })
         if User.objects.filter(username=username).exists():
             return render(request, "notes/signup.html", {
                 "error": "Username already exists"

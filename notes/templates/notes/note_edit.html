@@ -1,7 +1,9 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Edit Note</title>
+    <link rel="stylesheet" href="{% static 'notes/style.css' %}">
 </head>
 <body>
 
@@ -10,15 +12,7 @@
     <form method="POST">
         {% csrf_token %}
 
-        <label>Title:</label>
-        <br>
-        <input type="text" name="title" value="{{ note.title }}">
-        <br><br>
-
-        <label>Content:</label>
-        <br>
-        <textarea name="content">{{ note.content }}</textarea>
-        <br><br>
+        {{ form.as_p }}
 
         <button type="submit">Update Note</button>
     </form>
