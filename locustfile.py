@@ -1,5 +1,8 @@
+from django.http import response
 from locust import HttpUser, task, between
 import random
+import re
+import threading
 
 
 USERS = [
@@ -9,29 +12,46 @@ USERS = [
 
 
 class NoteSyncUser(HttpUser):
-
     wait_time = between(1, 3)
 
-    def on_start(self):
-        username, password = random.choice(USERS)
+    user_counter = 0
+    counter_lock = threading.Lock()
 
-        self.client.get(
+    def on_start(self):
+        with self.counter_lock:
+            user_index = NoteSyncUser.user_counter
+            NoteSyncUser.user_counter += 1
+
+        username, password = USERS[user_index % len(USERS)]
+
+        print("TRYING LOGIN:", username)
+
+        login_page = self.client.get(
             "/notes/login/",
             name="Login Page"
         )
 
-        self.client.post(
+        csrf_token = re.search(
+            r'name="csrfmiddlewaretoken" value="([^"]+)"',
+            login_page.text
+        ).group(1)
+
+        response = self.client.post(
             "/notes/login/",
             data={
                 "username": username,
                 "password": password,
+                "csrfmiddlewaretoken": csrf_token,
             },
-            name="Login"
+            name="Login",
+            allow_redirects=False
         )
 
+        print("LOGIN STATUS:", response.status_code)
+    
     @task
     def view_notes(self):
         self.client.get(
-            "/notes/",
-            name="View Notes"
+            "/api/notes/",
+            name="API - View Notes"
         )
