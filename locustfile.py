@@ -1,9 +1,6 @@
-from django.http import response
 from locust import HttpUser, task, between
 import random
 import re
-import threading
-
 
 USERS = [
     ("loadtest1", "LoadTest@12345"),
@@ -14,17 +11,8 @@ USERS = [
 class NoteSyncUser(HttpUser):
     wait_time = between(1, 3)
 
-    user_counter = 0
-    counter_lock = threading.Lock()
-
     def on_start(self):
-        with self.counter_lock:
-            user_index = NoteSyncUser.user_counter
-            NoteSyncUser.user_counter += 1
-
-        username, password = USERS[user_index % len(USERS)]
-
-        print("TRYING LOGIN:", username)
+        username, password = random.choice(USERS)
 
         login_page = self.client.get(
             "/notes/login/",
@@ -48,7 +36,7 @@ class NoteSyncUser(HttpUser):
         )
 
         print("LOGIN STATUS:", response.status_code)
-    
+
     @task
     def view_notes(self):
         self.client.get(

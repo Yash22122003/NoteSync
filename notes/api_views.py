@@ -11,12 +11,13 @@ from .serializers import NoteSerializer
 
 class NoteViewSet(viewsets.ModelViewSet):
     """
-    DRF API for Notes: list/create/retrieve/update/partial_update/destroy.
+    DRF API for Notes.
 
-    Ownership rules mirror the existing template views in notes/views.py:
-      - get_queryset() restricts every read/write to the caller's own
-        notes.
-      - perform_create() assigns request.user server-side.
+    - Users can access only their own notes.
+    - User is assigned automatically during creation.
+    - Note list is cached in Redis.
+    - Cache is invalidated whenever a note is created,
+      updated, or deleted.
     """
 
     serializer_class = NoteSerializer
@@ -39,7 +40,6 @@ class NoteViewSet(viewsets.ModelViewSet):
 
         cache_key = f"notes:user:{self.request.user.id}"
         cache.delete(cache_key)
-
 
     def perform_destroy(self, instance):
         cache_key = f"notes:user:{self.request.user.id}"
