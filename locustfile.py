@@ -8,7 +8,7 @@ USERS = [
 ]
 
 
-class NoteSyncUser(HttpUser):
+class ZyncUser(HttpUser):
     wait_time = between(1, 3)
 
     def on_start(self):
