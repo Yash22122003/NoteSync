@@ -5,6 +5,7 @@
     <title>Edit Note</title>
     <link rel="stylesheet" href="{% static 'notes/style.css' %}">
 </head>
+
 <body>
 
     <h1>Edit Note</h1>
@@ -20,6 +21,45 @@
     <br>
 
     <a href="{% url 'note_list' %}">Back to Notes</a>
+
+    <script>
+        const noteId = "{{ form.instance.id }}";
+        const textarea = document.querySelector("textarea");
+
+        const socket = new WebSocket(
+            `ws://${window.location.host}/ws/notes/${noteId}/`
+        );
+
+        socket.onopen = function () {
+            console.log("WebSocket connected");
+        };
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            if (textarea.value !== data.content) {
+                textarea.value = data.content;
+            }
+        };
+
+        socket.onclose = function () {
+            console.log("WebSocket disconnected");
+        };
+
+        let typingTimer;
+
+    textarea.addEventListener("input", function () {
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(function () {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    content: textarea.value
+                }));
+            }
+        }, 300);
+    });
+    </script>
 
 </body>
 </html>

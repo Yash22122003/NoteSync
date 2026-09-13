@@ -7,7 +7,7 @@ from .forms import NoteForm
 from django.contrib import messages
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-
+from django.db.models import Q
 @login_required
 def note_list(request):
     notes = Note.objects.filter(user=request.user)
@@ -34,7 +34,10 @@ def note_create(request):
     })
 @login_required
 def note_edit(request, id):
-    note = Note.objects.get(id=id, user=request.user)
+    note = Note.objects.get(
+        Q(id=id) &
+        (Q(user=request.user) | Q(collaborators=request.user))
+    )
 
     if request.method == "POST":
         form = NoteForm(request.POST, instance=note)
