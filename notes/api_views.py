@@ -8,7 +8,8 @@ from django.core.cache import cache
 from django.contrib.auth.models import User
 from .models import Note
 from .serializers import NoteSerializer
-
+from rest_framework.decorators import action
+from rest_framework import status
 
 class NoteViewSet(viewsets.ModelViewSet):
     """
@@ -67,6 +68,12 @@ class NoteViewSet(viewsets.ModelViewSet):
     def share(self, request, pk=None):
         note = self.get_object()
 
+        if note.user != request.user:
+            return Response(
+                {"error": "Only the note owner can share this note."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         username = request.data.get("username")
 
         if not username:
@@ -83,8 +90,14 @@ class NoteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        if user == request.user:
+            return Response(
+                {"error": "You already own this note."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         note.collaborators.add(user)
 
-        return Response(
-            {"message": f"Note shared with {username}."}
-        )
+        return Response({
+            "message": f"Note shared with {username}."
+        })

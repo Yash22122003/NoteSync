@@ -10,11 +10,16 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 @login_required
 def note_list(request):
-    notes = Note.objects.filter(user=request.user)
+    notes = Note.objects.filter(
+        Q(user=request.user) |
+        Q(collaborators=request.user)
+    ).distinct()
 
-    return render(request, "notes/note_list.html", {
-        "notes": notes
-    })
+    return render(
+        request,
+        "notes/note_list.html",
+        {"notes": notes}
+    )
 @login_required
 def note_create(request):
     if request.method == "POST":

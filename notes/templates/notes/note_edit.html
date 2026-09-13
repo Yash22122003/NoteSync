@@ -20,11 +20,36 @@
 
     <br>
 
+    {% if form.instance.user == request.user %}
+        <hr>
+
+        <h3>Share Note</h3>
+
+        <input
+            type="text"
+            id="shareUsername"
+            placeholder="Enter username"
+        >
+
+        <button type="button" id="shareButton">
+            Share
+        </button>
+
+        <p id="shareMessage"></p>
+    {% endif %}
+
+    <br>
+
     <a href="{% url 'note_list' %}">Back to Notes</a>
+
 
     <script>
         const noteId = "{{ form.instance.id }}";
         const textarea = document.querySelector("textarea");
+
+        // -------------------------
+        // WebSocket Collaboration
+        // -------------------------
 
         const socket = new WebSocket(
             `ws://${window.location.host}/ws/notes/${noteId}/`
@@ -48,17 +73,81 @@
 
         let typingTimer;
 
-    textarea.addEventListener("input", function () {
-        clearTimeout(typingTimer);
+        textarea.addEventListener("input", function () {
+            clearTimeout(typingTimer);
 
-        typingTimer = setTimeout(function () {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({
-                    content: textarea.value
-                }));
-            }
-        }, 300);
-    });
+            typingTimer = setTimeout(function () {
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        content: textarea.value
+                    }));
+                }
+            }, 300);
+        });
+
+
+        // -------------------------
+        // Share Note
+        // -------------------------
+
+        const shareButton = document.getElementById("shareButton");
+
+        if (shareButton) {
+            shareButton.addEventListener("click", async function () {
+
+                const username =
+                    document.getElementById("shareUsername").value.trim();
+
+                const message =
+                    document.getElementById("shareMessage");
+
+                if (!username) {
+                    message.textContent = "Please enter a username.";
+                    return;
+                }
+
+                const csrfToken =
+                    document.querySelector(
+                        "[name=csrfmiddlewaretoken]"
+                    ).value;
+
+                try {
+                    const response = await fetch(
+                        `/api/notes/${noteId}/share/`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": csrfToken
+                            },
+
+                            body: JSON.stringify({
+                                username: username
+                            })
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        message.textContent = data.message;
+                        document.getElementById(
+                            "shareUsername"
+                        ).value = "";
+                    } else {
+                        message.textContent =
+                            data.error || "Unable to share note.";
+                    }
+
+                } catch (error) {
+                    console.error(error);
+
+                    message.textContent =
+                        "Something went wrong.";
+                }
+            });
+        }
     </script>
 
 </body>
